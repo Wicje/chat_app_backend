@@ -3,7 +3,8 @@ import { generateToken } from '../lib/utils.js';
 import bcrypt from 'bcryptjs';
 import cloudinary from '../lib/cloudinary.js'
 
-//Signup
+
+//Signup of Userdev/
 export const signup = async (req, res) =>{
     const {fullName,email,password} = req.body
 try{
@@ -33,13 +34,15 @@ try{
             email: newUser.email,
             profilePic:newUser.profilePic,
         });
-    }else {
-        res.status(400).json({message:"Invalid user data"});
+
+    else {
+            res.status(400).json({message:"Invalid user data"});
+        }
+    }catch(error){
+        console.log("Error in Signup Controller", error.message);
+        res.status(500).json({message: "internal Server Error"});
     }
-}catch(error){
-    console.log("Error in Signup Controller", error.message);
-    res.status(500).json({message: "internal Server Error"});
-}
+    
 };
 
 //SignIn
@@ -75,7 +78,20 @@ export const login = async (req, res) => {
 };
 
 
-export const logout = (req, res) => {
+export const logout = async(req, res) => {
+
+    const 
+
+    try{
+        //Check if user is Logged 
+        try{
+        const user =  await User.findOne({email});
+
+        if(isLoggedIn){
+            return /// Continue from here 
+        }
+        }
+    }
     
 };
 
