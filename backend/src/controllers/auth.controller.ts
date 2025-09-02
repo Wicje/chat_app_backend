@@ -1,15 +1,23 @@
-import User from '../models/user.model.js';
-import { generateToken } from '../lib/utils.js';
-import bcrypt from 'bcryptjs';
-import cloudinary from '../lib/cloudinary.js'
 
+
+import { Request, Response } from 'express';
+import User from '../models/user.model.js';
+import jwt from 'jsonwebtoken';
+
+
+const generateToken = (id: string) => {
+    return jwt.sign({id}, process.env.JWT_SECRET as string, {
+        expiresIn: "1d"
+    });
+};
+/////////////////////////////
 
 //Signup of Userdev/
-export const signup = async (req, res) =>{
-    const {fullName,email,password} = req.body
+export const signup = async (req: Response, res:Response ) => {
+    const { email,password } = req.body;
 try{
-    //check if FullName, email, password is provided
-    if (!fullName ||!email || !password){
+    //check if email, password is provided
+    if ( !email || !password ) {
         return res.status(400)
         .json({message: "All fields are required"});
     }
@@ -19,9 +27,9 @@ try{
         .json({message: "Password must be atleast 6 characters"});
     }
 
-    const user = await User.findOne({email})
+    const userExists = await User.findOne({email})
 
-    if (user) return res.status(400)
+    if (userExists) return res.status(400)
         .json({message: "Email already exists"});
 
    //Hashing Password
@@ -29,11 +37,7 @@ try{
     const hashedPassword = await bcrypt.hash(password,salt)
 
     //Create New User
-    const newUser = new User({
-            fullName:newUser.fullName,
-            email: newUser.email,
-            profilePic:newUser.profilePic,
-        });
+    const newUser = await User.create({ email, password})
 
     else {
             res.status(400).json({message:"Invalid user data"});
@@ -42,16 +46,16 @@ try{
         console.log("Error in Signup Controller", error.message);
         res.status(500).json({message: "internal Server Error"});
     }
-    
+
 };
 
 //SignIn
-export const login = async (req, res) => {
+export const login = async (req:Request, res:Respons) => {
     const {email, password } = req.body
     try{
         //Validate if user email exist in database
         const user = await User.findOne({email});
-        
+
         if(!user){
             return res.status(400).json({message:"Invalid credentials"});  //Invalid credential
             //so as to confuse malicious users on whether it is password of email
@@ -80,19 +84,19 @@ export const login = async (req, res) => {
 
 export const logout = async(req, res) => {
 
-    const 
+    const
 
     try{
-        //Check if user is Logged 
+        //Check if user is Logged
         try{
         const user =  await User.findOne({email});
 
         if(isLoggedIn){
-            return /// Continue from here 
+            return /// Continue from here
         }
         }
     }
-    
+
 };
 
 export const updateProfile = async (req, res) => {
@@ -127,4 +131,4 @@ export const checkAuth = (req, res) => {
     console.log("Error in checkAuth controller", error.message);
     res.status(500).json({message:Internal Server errrrrror"});
   }
-};    
+};

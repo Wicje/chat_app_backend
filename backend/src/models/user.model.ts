@@ -1,29 +1,41 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const userSchema = new mongoose.Schema(
+import interface IUser extends Document {
+    email: string;
+    password: string;
+}
+
+const userSchema: Schema = new Schema(
     {
         email: {
             type: String,
             required: true,
             unique: true,
         },
-        fullName: {
+
+        password: {
             type: String,
-            required: true,
-        },
-        password:{
             required: true,
             unique: true,
             minlength: 6,
         },
-        profilepic: {
-            type: String,
-            default: "",
-        },
     },
-    {timestamps: true }
+    { timestamps: true }
 );
 
-const User = mongoose.model("User", userSchema);
+//Hash my password before saving
+userSchema.pre("save", async function(next) {
+    if (this.isModified("password")) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
 
-export default User;
+//Compare password
+userSchema.methods.comparePassword = async function(
+    candidatePassword: string
+): Promise<boolean> {
+    return bcrypt.compare(candidatePassword, this.password);
+}
+
+export default mongoose.model<IUser>("User", userSchema);
