@@ -1,39 +1,43 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/user.model.js';
+import User from '../models/user.model';
+import { Request, Response, NextFunction } from 'express';
 
-//Make Sure that only a verified user can update profile pic
-export  const protectRoute = async (req,res, next) => {
-    try{
-        const token = req.cookie.jwt
+interface jwtPayload {
+    id: string;
+}
 
-        if(!token){
-            return res.status(401).json({
-                message:"Unauthorised = No token Provided"
-            });
+//Extend Request to user
+declare global {
+    namespace express {
+        interface Request {
+            user?: any;
         }
+    }
+}
 
-        const decoded = jwt.verify(token,process.eventNames.JWT_SECRET)
+export const protect = async (req: Request, res: Response, next: NextFunction) => {
+    let token;
 
-        if(!decoded){
-            return res.status(401).json({
-                message: "Unauthorised-Invalid Token"
-            });
+    //Check for cookies in header
+    if (req.cookies?.token) {
+        token = req.cookies.token;
+    } else if (req.headers.authorization?.startsWith("Bearer")) {
+        token = req.header.authorization.split("")[1];
+    }
+    if (!token) {
+        return res.status(401).json({ message: "Not authorized, No token" });
+    }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as jwtPayload;
 
-            const user = await User.findById(decoded.userId).select("password");
-
-            if(!user){
-                return res.status(404).json({
-                    message:"User not found"
-                });
-            }
-
-
-            req.user = user
-
-            next()
-        }
-    }catch(error){
-        console.log("Error in protectRoute middleware:", error.message);
-        res.status(500).json({message: "Internal server error"});
+        const user = await User.findById(decoded.id).select("-password");
+        if (!user) return res.status(401).json({
+            message: "Not Authorzed, User not found"
+        });
+    } catch (error: any) {
+        console.error("Auth middleware Error ", error.message);
+        res.status(401).json({
+            message: "Not Authorizd, no token"
+        });
     }
 };

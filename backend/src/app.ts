@@ -1,13 +1,13 @@
 import express, { Application } from 'express';
 import User from './models/user.model';
-
-const app:Application = express();
+import authRoutes from './routes/auth.route';;
+const app: Application = express();
 
 //middleware
 app.use(express.json());
 
 //Test user output
-app.post('/test user', async (req, res) => {
+/*app.post('/test user', async (req, res) => {
   try{
     const { email, password } = req.body;
     const user = new User({ email, password });
@@ -19,10 +19,14 @@ app.post('/test user', async (req, res) => {
       error
     });
   }
-});
+});*/
 
 //Route
-app.get('/', (req:Request, res: Response ) => {
+
+app.use('/api/v1/auth', authRoutes);
+
+
+app.get('/', (req: Request, res: Response) => {
   res.send("App running Successfully");
 });
 

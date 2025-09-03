@@ -68,21 +68,28 @@ export const login = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        generateToken(user._id, res)
+        const token = generateToken(user._id.toString());
+
+        //Set as http cookie
+        res.cookie("token", token, {
+            httpOnly: True,
+            secure: process.env.NODE_ENV === "production",///only used in Production
+            sameSite: "Strict",
+            maxAge:60*24*60*60*1000
+        });
 
         res.status(200).json({
             _id: user._id,
-            fullName: user.fullName,
             email: user.email,
-            profilePic: user.profilePic,
-        })
-    } catch (error) {
+            token
+        });
+    } catch (error:any) {
         console.log("Error in login controller", error.message);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
-
+//NOt worked on this yet:
 export const logout = async (req, res) => {
 
     const
@@ -100,28 +107,6 @@ export const logout = async (req, res) => {
 
 };
 
-export const updateProfile = async (req, res) => {
-    try {
-        const { profilePic } = req.body;
-        const userId = req.body._id;
-
-        if (!profilePic) {
-            return res.status(400).json(
-                message: "Profile Pic is Required"
-            });
-    }
-
-        const uploadResponse = await cloudinary.uploader.upload(profilePic)
-    const updatedUser = await User.findByIdAndUpdate(userId, { profilePice: uploadResponse.secure_url }, { new: true })
-
-    res.status(200).json(updatedUser)
-}catch (error) {
-    console.log("error in profile update");
-    res.status(500)({
-        message: "Internal server error"
-    });
-}
-};
 
 
 
