@@ -1,10 +1,14 @@
 import express, { Application } from 'express';
-import User from './models/user.model';
-import authRoutes from './routes/auth.route';;
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import authRoutes from './routes/auth.route';
+import messageRoutes from './controllers/message.controller';
+import chatRoomRoutes from "./controllers/chatRoom.controller"
 const app: Application = express();
 
 //middleware
 app.use(express.json());
+app.use(cookieParser());
 
 //Test user output
 /*app.post('/test user', async (req, res) => {
@@ -24,7 +28,8 @@ app.use(express.json());
 //Route
 
 app.use('/api/v1/auth', authRoutes);
-
+app.use('/api/v1/chatroom', chatRoomRoutes);
+app.use('/api/v1/messages', messageRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send("App running Successfully");
