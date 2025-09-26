@@ -1,83 +1,35 @@
 
-import User from '../models/user.model.js';
-import Message from '../models/message.model.js';
+import { Request,Response } from "express";
+import Message from "../models/message.model";
+import ChatRoom from "../models/chatRoom.model";
 
-export const getUsersForSidebar = async (req, res) => {
-  try {
-    const looggedUserId = req.user._id;
-    const filteredUsers = await User.find({_id: {$ne:loggedInUserId}}).select("password");
+export const sendMessage = async (req:Request, res:Response) {
+   try {
 
-    res.status(200).json(filteredUsers);
-  }catch(error){
-    console.error("Error in getUserForSidebar:" , error.message);
-  }
-};
+    const { content } = req.body;
+    const { chatRoomId } = req.params;
 
-export const getMessages = async (req, res) => {
-  try {
-    const { id:userToChatId } = req.params;
-    const senderId = req.user._id;
+    const room = await ChatRoom.findById(chatRoomId);
 
-    const messages = await Message.find({
-      $or:[
-        {senderId:senderId, recieverId:userToChatId},
-        {senderId:userToChatId, recieverId:senderId},
-      ],
-    });
-
-    res.status(200).json(messages);
-  }catch (error) {
-    console.log("Error in getMessages controllers:", error.message);
-    res.status(500).json({ errors: "Internal server error"});
-  } 
-};
-
-export const sendMessages = async(req, res) => {
-  try{
-    const {text, image } = req.body;
-    const { id: receiverId } = req.params;
-    const senderId = req.user._id;
-
-    let imageUrl;
-    if (image) {
-      //upload base64 image from cloudinary
-      const uploadResponse = await cloudinary.uploader.upload{image};
-      imageUrl = uploadResponse.secure_url;
+    if (!room) {
+      return res.status(404).json({ message: "Chat room not found" });
     }
 
-    const newMessage = new Message ({
-      senderId,
-      receiverId,
-      text,
-      image: imageUrl,
+    if (!room.users.includes(req.user._id)) {
+        return res.status(403).json9({ 
+            message: "You are not in this chat room"
+        });
+    }
+
+    const message = new Message({
+      content,
+      chatRoom: roomId,
+      sender: req.user._id
     });
 
-    await newMessage.save();
+    await message.save();
 
-    //TODO: realtime functionality goes here with socket
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //.
-    res.status(201).json(newMessage);
-  }catch(error) {
-       console.log("Error in getMessages controllers:", error.message);
-    res.status(500).json({ errors: "Internal server error"});
-
-  }
+    room.messages.push(message._id);
+    await room.save();
+   }
 }
